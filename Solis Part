@@ -1,0 +1,327 @@
+int option;
+int fighter1 = -1;   //Position of player 1's character (-1 = not chosen)
+int fighter2 = -1;   //Position of player 2's character
+Random rnd = new Random();   //Only once, before the loop
+
+
+Character[] roster =
+{
+    new Character { Name = "OSO BIMBO", Hp = 130, MaxHp = 130, Attack = 11, Hability = "AGRESIVITY", Level = 1 },
+    new Character { Name = "DOCTOR SIMI", Hp = 100, MaxHp = 100, Attack = 13, Hability = "INVISIBILITY", Level = 1 },
+    new Character { Name = "Mamá Lucha", Hp = 110, MaxHp = 110, Attack = 14, Hability = "SUPER VELOCITY", Level = 1 },
+    new Character { Name = "Vaquita Alpura", Hp = 120, MaxHp = 120, Attack = 12, Hability = "INVISIBILITY", Level = 1 },
+    new Character { Name = "Reno Telcel", Hp = 95, MaxHp = 95, Attack = 16, Hability = "LASER RAYS", Level = 1 },
+    new Character { Name = "Pantera UP", Hp = 105, MaxHp = 105, Attack = 17, Hability = "AGRESIVITY", Level = 1 },
+    new Character { Name = "Borrego TEC", Hp = 90, MaxHp = 90, Attack = 11, Hability = "LASER RAYS", Level = 1 },
+    new Character { Name = "Winnieh Poh Matrix", Hp = 100, MaxHp = 100, Attack = 15, Hability = "SUPER VELOCITY", Level = 1 },
+    
+};
+
+do
+{
+    DisplayMenu();
+    if (!int.TryParse(Console.ReadLine(), out option)) //Validate the option that the user puts 
+    {
+        option = 0; //Here we check that if we put letters its invalid
+    }
+    
+    Console.WriteLine();
+    if (option == 1)
+    {
+        Console.WriteLine("Catalog of Characters");
+        Console.WriteLine();
+        Console.WriteLine($"{"#",-3}{"NAME",-20}{"HP",5}{"ATK",6}   {"HABILITY",-16}");   //Uso de la ia para que el espaciado quede perfecto
+        Console.WriteLine("------------------------------------------------------");
+        
+        for (int i = 0; i < roster.Length; i++)   //One row per character
+        {
+            Console.WriteLine($"{i + 1,-3}{roster[i].Name,-20}{roster[i].MaxHp,5}{roster[i].Attack,6}   {roster[i].Hability,-16}"); //uso de la ia para que el espaciado quede perfecto
+        }
+
+        Console.WriteLine();
+        Console.Write("Habilities ");
+        Console.WriteLine();
+        Console.WriteLine($"Invisibility- Recupera 25 de vida por turno");
+        Console.WriteLine($"Aggresivity- Hace que el siguiente golpe cause el doble de daño");
+        Console.WriteLine($"Super velocity- Ataca dos veces seguidas");
+        Console.WriteLine($"Laser rays- Hace 35 de daño directo");
+    }
+
+    else if (option == 2)
+    {
+        Console.Write(" Choose fighters ");
+    }
+    else if (option == 3)
+    {
+        Console.Write(" Fight ");
+        if (fighter1 == -1 || fighter2 == -1)   //-1 = they have not chosen yet
+        {
+            Console.WriteLine("Choose fighters first (option 2).");
+        }
+        else
+        {
+            Fight(ref roster[fighter1], ref roster[fighter2], rnd);
+        }
+       
+    }
+    else if (option == 4)
+    {
+        Console.Write(" Stats/Ranking ");
+    }
+    else if (option == 5)
+    {
+        Console.Write(" Exit ");
+    }
+  else 
+    {
+    Console.WriteLine("Invalid option");
+    }
+    if (option != 5)      //The user put other thing that the other options 
+    {
+        Console.WriteLine();
+        Console.WriteLine("PRESS ANY KEY TO SATART AGAIN");
+        Console.ReadKey();
+    }
+}while (option != 5);
+static void ValidateDouble(out double value)    //Here we value that in the menu options the user only put numbers and the options permitted 
+{
+    while (!double.TryParse(Console.ReadLine(), out value))
+    {
+        Console.Write("Invalid input, try again: ");
+    }
+}
+ static void Fight(ref Character p1, ref Character p2, Random rnd)   //ref: changes the real characters
+{
+    //Start of the fight: full life and habilities available
+    p1.Hp = p1.MaxHp;
+    p2.Hp = p2.MaxHp;
+    p1.HabilityUsed = false;
+    p2.HabilityUsed = false;
+
+    bool p1Double = false;   //AGRESIVITY active for player 1
+    bool p2Double = false;   //AGRESIVITY active for player 2
+    int turn = 1;            //1 = player 1, 2 = player 2
+    int option;
+    int damage;
+    bool turnDone;           //true when the player finished a valid action
+
+    Console.WriteLine($"=== {p1.Name} VS {p2.Name} ===");
+
+    while (p1.Hp > 0 && p2.Hp > 0)   //The fight continues while both are alive
+    {
+        if (turn == 1)   //Turn of player 1
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Turn of {p1.Name}  HP = {p1.Hp}/{p1.MaxHp}");
+            Console.WriteLine("1) Weak attack   (always hits, half damage)");
+            Console.WriteLine("2) Strong attack (60% chance to hit, full damage)");
+            Console.WriteLine($"3) Use hability ({p1.Hability})");
+
+            turnDone = false;
+            while (turnDone == false)   //Repeat until the player makes a valid action
+            {
+                ValidateInt("Option: ", out option);
+
+                if (option == 1 || option == 2)   //Attack
+                {
+                    RollDamage(p1.Attack, option == 2, rnd, out damage, out bool hit);
+
+                    if (hit == false)   //The strong attack missed
+                    {
+                        Console.WriteLine($"{p1.Name} missed the attack!");
+                    }
+                    else
+                    {
+                        if (p1Double == true)   //AGRESIVITY doubles this hit
+                        {
+                            damage = damage * 2;
+                            p1Double = false;
+                            Console.WriteLine("AGRESIVITY: double damage");
+                        }
+
+                        p2.Hp = p2.Hp - damage;
+                        Console.WriteLine($"{p1.Name} attacks {p2.Name} with {damage}");
+                    }
+                    turnDone = true;
+                }
+                else if (option == 3)   //Hability: false if it was already used
+                {
+                    turnDone = UseHability(ref p1, ref p2, ref p1Double);
+                }
+                else   //Number outside 1-3
+                {
+                    Console.WriteLine("Invalid option (1-3)");
+                }
+            }
+            turn = 2;   //Change turn
+        }
+        else   //Turn of player 2
+        {
+            Console.WriteLine();
+            Console.WriteLine($"Turn of {p2.Name}  HP = {p2.Hp}/{p2.MaxHp}");
+            Console.WriteLine("1) Weak attack   (always hits, half damage)");
+            Console.WriteLine("2) Strong attack (60% chance to hit, full damage)");
+            Console.WriteLine($"3) Use hability ({p2.Hability})");
+
+            turnDone = false;
+            while (turnDone == false)   //Repeat until the player makes a valid action
+            {
+                ValidateInt("Option: ", out option);
+
+                if (option == 1 || option == 2)   //Attack
+                {
+                    RollDamage(p2.Attack, option == 2, rnd, out damage, out bool hit);
+
+                    if (hit == false)   //The strong attack missed
+                    {
+                        Console.WriteLine($"{p2.Name} missed the attack!");
+                    }
+                    else
+                    {
+                        if (p2Double == true)   //AGRESIVITY doubles this hit
+                        {
+                            damage = damage * 2;
+                            p2Double = false;
+                            Console.WriteLine("AGRESIVITY: double damage");
+                        }
+
+                        p1.Hp = p1.Hp - damage;
+                        Console.WriteLine($"{p2.Name} attacks {p1.Name} with {damage}");
+                    }
+                    turnDone = true;
+                }
+                else if (option == 3)   //Hability: false if it was already used
+                {
+                    turnDone = UseHability(ref p2, ref p1, ref p2Double);
+                }
+                else   //Number outside 1-3
+                {
+                    Console.WriteLine("Invalid option (1-3)");
+                }
+            }
+            turn = 1;   //Change turn
+        }
+
+        //Life cannot be negative
+        if (p1.Hp < 0) p1.Hp = 0;
+        if (p2.Hp < 0) p2.Hp = 0;
+
+        Console.WriteLine($"{p1.Name} {p1.Hp}/{p1.MaxHp} | {p2.Name} {p2.Hp}/{p2.MaxHp}");
+    }
+
+    //Winner: the one still alive levels up
+    Console.WriteLine();
+    if (p1.Hp > 0)
+    {
+        Console.WriteLine($"{p1.Name} is the winner!");
+        LevelUp(ref p1);
+    }
+    else
+    {
+        Console.WriteLine($"{p2.Name} is the winner!");
+        LevelUp(ref p2);
+    }
+}
+
+static bool UseHability(ref Character attacker, ref Character defender, ref bool doubleNext)   //ref: changes life of both
+{
+    if (attacker.HabilityUsed == true)   //Only once per fight
+    {
+        Console.WriteLine("Hability has been used this fight");
+        return false;
+    }
+
+    if (attacker.Hability == "INVISIBILITY")   //Recovers 25 HP
+    {
+        attacker.Hp = attacker.Hp + 25;
+        if (attacker.Hp > attacker.MaxHp) attacker.Hp = attacker.MaxHp;   //Not above max life
+        Console.WriteLine($"{attacker.Name} recovers 25 HP");
+    }
+    else if (attacker.Hability == "AGRESIVITY")   //Next hit does double damage
+    {
+        doubleNext = true;
+        Console.WriteLine($"{attacker.Name}'s next attack will be double");
+    }
+    else if (attacker.Hability == "SUPER VELOCITY")   //Two attacks in a row
+    {
+        defender.Hp = defender.Hp - attacker.Attack;
+        defender.Hp = defender.Hp - attacker.Attack;
+        Console.WriteLine($"{attacker.Name} double attack: {attacker.Attack * 2} damage");
+    }
+    else if (attacker.Hability == "LASER RAYS")   //35 direct damage
+    {
+        defender.Hp = defender.Hp - 35;
+        Console.WriteLine($"{attacker.Name} LASER RAYS: 35 direct damage");
+    }
+
+    attacker.HabilityUsed = true;
+    return true;
+}
+
+static void RollDamage(int attack, bool strong, Random rnd, out int damage, out bool hit)   //out: two results at once
+{
+    if (strong)   //Strong attack: full damage, can miss
+    {
+        hit = rnd.Next(1, 101) <= 60;   //60% chance to hit
+        if (hit)
+        {
+            damage = attack;
+        }
+        else
+        {
+            damage = 0;
+        }
+    }
+    else   //Weak attack: half damage, always hits
+    {
+        hit = true;
+        damage = attack / 2;
+    }
+}
+
+static void LevelUp(ref Character winner)   //ref: the real character in the roster levels up
+{
+    winner.Wins++;
+    winner.Level++;
+    winner.MaxHp = winner.MaxHp + 10;
+    winner.Attack = winner.Attack + 2;
+    Console.WriteLine($"{winner.Name} is now level {winner.Level}! (+10 HP, +2 ATK)");
+}
+static void ValidateInt(string message, out int result)   //Repeats the message until the user enters an integer
+{
+    Console.Write(message);
+    while (!int.TryParse(Console.ReadLine(), out result))
+    {
+        Console.WriteLine("Invalid input. You must enter a whole number.");
+        Console.Write(message);
+    }
+}
+ 
+
+
+
+ static void DisplayMenu()
+{
+    Console.Clear();
+    Console.WriteLine("=====================================");  //MENU DISPLAY
+    Console.WriteLine("|  ATTACK OF THE COSTUME CHARACTERS |");  //MENU DISPLAY
+    Console.WriteLine("|   1.Characters available          |");  //MENU DISPLAY
+    Console.WriteLine("|   2.Choose fighters               |");  //MENU DISPLAY
+    Console.WriteLine("|   3. Fight                        |");  //MENU DISPLAY
+    Console.WriteLine("|   4. Stats/Ranking                |");  //MENU 
+    Console.WriteLine("|   5.Exit                          |");  //MENU DISPLAY
+    Console.WriteLine("=====================================");  //MENU DISPLAY
+    Console.WriteLine("Select an option (1-5): ");
+}
+
+struct  Character
+{
+    public string Name;
+    public int Hp;
+    public int MaxHp;
+    public int Attack;
+    public string Hability;
+    public int Level;
+    public int Wins;
+    public bool HabilityUsed;
+}
